@@ -31,7 +31,7 @@ internal class Note
     public void Render()
     {
         AnsiConsole.Write(
-            new Panel(Content)
+            new Panel(new Markup(Content, Color.Grey70))
             .Expand()
             .BorderColor(Color.Blue)
             .AsciiBorder()
