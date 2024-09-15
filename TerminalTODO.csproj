@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="TerminalTODO.zip" />
+    <None Remove="TerminalTODO_release.zip" />
   </ItemGroup>
 
   <ItemGroup>
