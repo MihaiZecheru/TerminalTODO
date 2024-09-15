@@ -22,9 +22,9 @@ Keys in the note entry field:
 - Enter to save the note.
 
 Keys in the multi-line new note entry editor:
+- Ctrl+Q to go back to main screen, deleting the unfinished note.
 - Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.
 - Backspace to delete a char.
 - Ctrl+Backspace to delete a word.
 - Enter to insert a new line.
 - Alt+S to save the note.
-- Escape to go back to main screen, deleting the unfinished note.
