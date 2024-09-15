@@ -6,12 +6,19 @@ internal class MuliLineNoteEditor
 {
     private List<List<char>> lines = new List<List<char>>();
 
-    public MuliLineNoteEditor()
+    public MuliLineNoteEditor(string? footer_text = null)
     {
         lines.Add(new List<char>());
         Console.Clear();
         AnsiConsole.Write(new Panel("[plum2]Write Note[/]").Expand().BorderColor(Color.Blue).AsciiBorder());
         Console.CursorTop++;
+        
+        if (footer_text != null)
+        {
+            lines[0] = footer_text.ToList();
+            Console.Write(footer_text);
+        }
+
         Console.CursorVisible = true;
     }
 
@@ -26,6 +33,19 @@ internal class MuliLineNoteEditor
             if (keyInfo.Key == ConsoleKey.Q && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 return null;
+            }
+
+            // Help
+            if (keyInfo.Key == ConsoleKey.H && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                Program.ShowHelpScreen();
+                AnsiConsole.Write(new Panel("[plum2]Write Note[/]").Expand().BorderColor(Color.Blue).AsciiBorder());
+                Console.CursorTop++;
+                foreach (var line in lines)
+                {
+                    Console.WriteLine(string.Concat(line));
+                }
+                continue;
             }
 
             // Save
