@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ApplicationIcon>bin\Release\net8.0\app.ico</ApplicationIcon>
+    <PublishAot>True</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
