@@ -25,7 +25,7 @@ internal class Note
 
     public void Delete()
     {
-        File.WriteAllText(notes_filename, string.Join('|', Note.GetAllNotes().Where(n => n.ToString() != this.ToString())));
+        File.WriteAllText(notes_filename, string.Join('|', Note.GetAllNotes().Where(n => n.ToString() != this.ToString())) + "|");
     }
 
     public void Render()
