@@ -4,6 +4,8 @@ Simple TODO app in the terminal.
 
 Lightweight and easy to use.
 
+![screenshot](https://github.com/user-attachments/assets/5d0e4220-d40e-4fdc-b8cd-983a96b43fb9)
+
 Press Ctrl+H anywhere to open the help menu which will display the following:
 
 Keys on the main screen:
