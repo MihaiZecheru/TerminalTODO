@@ -48,9 +48,11 @@ internal class MuliLineNoteEditor
                 continue;
             }
 
-            // Save
-            if (keyInfo.Key == ConsoleKey.S && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt))
-            {
+            // Save with Alt+S or Ctrl+Enter
+            if (
+                (keyInfo.Key == ConsoleKey.S && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt)) ||
+                (keyInfo.Key == ConsoleKey.Enter && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
+            ) {
                 Console.CursorVisible = false;
                 // Trim empty lines at end
                 while (lines.Count > 1 && lines[lines.Count - 1].Count == 0)
