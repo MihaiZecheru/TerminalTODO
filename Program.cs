@@ -3,7 +3,7 @@ using TerminalTODO;
 
 public class Program
 {
-    private static readonly string help_text = "Press Ctrl+H anywhere to open the help menu which will display the following:\n\nKeys on the main screen:\n- Ctrl+Q - Quit the app.\n- Ctrl+D - Delete the note at the top of the screen.\n- UpArrow - Scrolls up.\n- DownArrow - Scrolls down.\n- N - Focus the new note entry field where you can write down a new TODO note.\n- Ctrl+N - Open the multi-line new note entry editor.\n\nKeys in the note entry field:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Escape to unfocus the note entry field.\n- Enter to save the note.\n\nKeys in the multi-line new note entry editor:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Enter to insert a new line.\n- Alt+S to save the note.\n- Escape to go back to main screen, deleting the unfinished note.\n\n[plum2]Press any key to exit[/]";
+    private static readonly string help_text = "Press Ctrl+H anywhere to open the help menu which will display the following:\n\nKeys on the main screen:\n- Ctrl+Q - Quit the app.\n- Ctrl+D - Delete the note at the top of the screen.\n- UpArrow - Scrolls up.\n- DownArrow - Scrolls down.\n- N - Focus the new note entry field where you can write down a new TODO note.\n- Ctrl+N - Open the multi-line new note entry editor.\n\nKeys in the note entry field:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Escape to unfocus the note entry field.\n- Enter to save the note.\n\nKeys in the multi-line new note entry editor:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Enter to insert a new line.\n- Ctrl+Enter to save the note.\n- Alt+S also saves the note.\n- Escape to go back to main screen, deleting the unfinished note.\n\n[plum2]Press any key to exit[/]";
     private static List<Note> notes = new List<Note>();
     private static readonly string default_footer_text = "[grey70]Press 'n' to write new note[/]";
     private static string footer_text = "";
@@ -195,8 +195,10 @@ public class Program
             }
             else
             {
+                // If the key is a letter or a digit and there is space, add it to the footer
                 if (char.IsLetterOrDigit(keyInfo.KeyChar) || "@#$%^&*()-_=+[]{};:'\",.<>/!?~ ".Contains(keyInfo.KeyChar))
                 {
+                    if (footer_text.Length == Console.WindowWidth - 9) continue;
                     footer_text += keyInfo.KeyChar;
                     AnsiConsole.Write(new Markup(keyInfo.KeyChar.ToString(), Color.Plum2));
                 }
