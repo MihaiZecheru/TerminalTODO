@@ -15,6 +15,7 @@ Keys on the main screen:
 - DownArrow - Scrolls down.
 - N - Focus the new note entry field where you can write down a new TODO note.
 - Ctrl+N - Open the multi-line new note entry editor.
+- Ctrl+Alt+Shift+L to sync notes across clients or to sync notes to the cloud
 
 Keys in the note entry field:
 - Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.

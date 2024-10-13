@@ -3,11 +3,12 @@ using TerminalTODO;
 
 public class Program
 {
-    private static readonly string help_text = "Press Ctrl+H anywhere to open the help menu which will display the following:\n\nKeys on the main screen:\n- Ctrl+Q - Quit the app.\n- Ctrl+D - Delete the note at the top of the screen.\n- UpArrow - Scrolls up.\n- DownArrow - Scrolls down.\n- N - Focus the new note entry field where you can write down a new TODO note.\n- Ctrl+N - Open the multi-line new note entry editor.\n\nKeys in the note entry field:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Escape to unfocus the note entry field.\n- Enter to save the note.\n\nKeys in the multi-line new note entry editor:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Enter to insert a new line.\n- Ctrl+Enter to save the note.\n- Alt+S also saves the note.\n- Escape to go back to main screen, deleting the unfinished note.\n\n[plum2]Press any key to exit[/]";
+    private static readonly string help_text = "Press Ctrl+H anywhere to open the help menu which will display the following:\n\nKeys on the main screen:\n- Ctrl+Q - Quit the app.\n- Ctrl+D - Delete the note at the top of the screen.\n- UpArrow - Scrolls up.\n- DownArrow - Scrolls down.\n- N - Focus the new note entry field where you can write down a new TODO note.\n- Ctrl+N - Open the multi-line new note entry editor.\n- Ctrl+Alt+Shift+L to sync notes across clients or to sync notes to the cloud\n\nKeys in the note entry field:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Escape to unfocus the note entry field.\n- Enter to save the note.\n\nKeys in the multi-line new note entry editor:\n- Type to add characters. Alphanumeric plus some common special characters like @ or % are allowed.\n- Backspace to delete a char.\n- Ctrl+Backspace to delete a word.\n- Enter to insert a new line.\n- Ctrl+Enter to save the note.\n- Alt+S also saves the note.\n- Escape to go back to main screen, deleting the unfinished note.\n\n[plum2]Press any key to exit[/]";
     private static List<Note> notes = new List<Note>();
     private static readonly string default_footer_text = "[grey70]Press 'n' to write new note[/]";
     private static string footer_text = "";
     private static int notes_start_index = 0;
+    public static Guid? UUID = GetUUID();
 
     public static void Main(string[] args)
     {
@@ -15,11 +16,19 @@ public class Program
         {
             File.CreateText("notes.txt");
             Console.Clear();
-            Console.WriteLine("No notes file found. A new one was created, but you need to restart the program.");
+            Console.WriteLine("No notes file found. A new one was created for you, but you need to restart the program.");
             Environment.Exit(0);
         }
 
-        notes = Note.GetAllNotes();
+        if (UUID != null)
+        {
+            notes = FireSharpClient.GetCloudNotes((Guid)UUID).Result;
+        }
+        else
+        {
+            notes = Note.GetAllNotes();
+        }
+
         MainLoop();
     }
 
@@ -93,6 +102,11 @@ public class Program
                 ShowHelpScreen();
                 RenderScreen();
                 continue;
+            } else if (keyInfo.Key == ConsoleKey.L && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            {
+                AnsiConsole.Cursor.Hide();
+                BeginLinking();
+                Environment.Exit(0);
             }
         }
     }
@@ -256,5 +270,162 @@ public class Program
         Console.ReadKey(true); 
         if (cursorVisible) AnsiConsole.Cursor.Show();
         Console.Clear();
+    }
+
+    /// <summary>
+    /// When the user presses Ctrl+Alt+Shift+L, the app will enter linking mode.
+    /// This function is used to link two TerminalTODO clients together.
+    /// </summary>
+    private static void BeginLinking()
+    {
+        Console.Clear();
+        AnsiConsole.Write(new Panel(new Markup("Linking mode", Color.Blue).Centered()).Expand().BorderColor(Color.Blue));
+        AnsiConsole.Write("When pairing two clients, choose the 'Master' option on one of them, and the 'Slave' option on the other.\n" +
+            "It doesn't matter which is which. The Master will give a pairing code, and the Slave will use that pairing code to link the two.\n\n" +
+            "To instead sync your notes to the cloud (without linking another client), select Master then exit the application without pairing.\n\n" +
+            "Note that if a Slave doesn't pair to the Master before the code expires (5m), the Master will forever be synced to the client. " +
+            "Quit if you don't want your notes saved to the cloud and if you don't want them synced to another client");
+        string choice = AnsiConsole.Prompt(new SelectionPrompt<string>()
+            .Title("Choose the client's role")
+            .AddChoices("Master", "Slave", "Quit")
+        );
+
+        if (choice == "Master")
+        {
+            DoMasterLinking().Wait();
+        }
+        else if (choice == "Slave")
+        {
+            DoSlaveLinking().Wait();
+        }
+        else
+        {
+            AnsiConsole.Write("\nYour notes were not synced to the cloud or with another client. Press any key to quit.");
+            Console.ReadKey(true);
+            Environment.Exit(0);
+        }
+    }
+
+    /// <summary>
+    /// Do the linking process for the master client. This will generate a random 6-digit pairing code and post it to the database so that the slave can pair to it.
+    /// </summary>
+    /// <see cref="BeginLinking"/>
+    private static async Task DoMasterLinking()
+    {
+        // Random 6-digit number - leads to the link_UUID, makes it easier to pair as it's a shorter string
+        string pairing_code;
+        
+        while (true)
+        {
+            pairing_code = new Random().Next(100000, 999999).ToString();
+            try
+            {
+                await FireSharpClient.TryPairingCodeAsync(pairing_code);
+            } catch (Exception)
+            {
+                // The code doesn't yet exist
+                break;
+            }
+        }
+
+        // The UUID is used in the database.
+        Guid link_UUID = Guid.NewGuid();
+        AnsiConsole.Markup($"(Master) - Your pairing code is: [plum2]{pairing_code}[/]\n\nThe code will expire in 5 minutes.\n\nEnter the code on a slave client to link the two.\n\n[red]Do not exit the app until the process is complete.[/]");
+
+        // Post status code to database
+        try
+        {
+            FireSharpClient.PostPairingCodeAsync(pairing_code, link_UUID.ToString()).Wait();
+        }
+        catch (Exception e)
+        {
+            AnsiConsole.Write(new Panel(new Markup($"An error occurred while trying to post the pairing code to the database: {e.Message}", Color.Red)).Expand().BorderColor(Color.Red));
+            Console.ReadKey(true);
+            Console.Clear();
+            return;
+        }
+
+        // Delete in 5 minutes
+#pragma warning disable CS4014
+        Task.Run(() => {
+            Task.Delay(300000).Wait();
+            FireSharpClient.DeletePairingCode(pairing_code).Wait();
+        });
+#pragma warning restore CS4014
+
+        SaveUUID(link_UUID);
+        foreach (Note note in notes) await FireSharpClient.UploadNoteToCloud(link_UUID, note);
+        AnsiConsole.Markup($"\n\nThe pairing is complete once the slave receives his confirmation message. When that happens, press any key to close the app.");
+        Console.ReadKey(true);
+        Console.Clear();
+    }
+
+    /// <summary>
+    /// Do the linking process for the slave client. This will prompt the user to enter the pairing code given by the master, and then link the two clients together.
+    /// </summary>
+    /// <see cref="BeginLinking"/>
+    private static async Task DoSlaveLinking()
+    {
+        string pairingCode = "";
+        while (pairingCode.Length != 6 && pairingCode.All(char.IsDigit))
+        {
+            pairingCode = AnsiConsole.Ask<string>("(Slave) -  Enter the pairing code given by the master: ").Trim();
+            Console.CursorTop--;
+        }
+
+        Guid uuid;
+        try
+        {
+            uuid = await FireSharpClient.TryPairingCodeAsync(pairingCode);
+        } catch (Exception)
+        {
+            AnsiConsole.Write("Pairing failed. The pairing code is invalid or has expired. Press any key to exit.");
+            Console.ReadKey(true);
+            return;
+        }
+
+        SaveUUID(uuid);
+        foreach (Note note in notes) await FireSharpClient.UploadNoteToCloud(uuid, note);
+        await FireSharpClient.DeletePairingCode(pairingCode);
+        AnsiConsole.Write(new Panel(new Markup("The two clients are now linked. Press any key to close the app.", Color.Green)).Expand().BorderColor(Color.Green));
+        Console.ReadKey(true);
+        Console.Clear();
+    }
+
+    /// <summary>
+    /// Save the UUID to file
+    /// </summary>
+    /// <param name="uuid"></param>
+    private static void SaveUUID(Guid uuid)
+    {
+        File.WriteAllText("uuid.txt", uuid.ToString());
+    }
+
+    /// <summary>
+    /// Get the UUID from file if it exists
+    /// </summary>
+    /// <returns></returns>
+    private static Guid? GetUUID()
+    {
+        if (!File.Exists("uuid.txt"))
+        {
+            return null;
+        }
+
+        string text = File.ReadAllText("uuid.txt");
+
+        if (text.Length != 36)
+        {
+            return null;
+        }
+
+        try
+        {
+            return Guid.Parse(text);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 }
