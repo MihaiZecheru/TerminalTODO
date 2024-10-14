@@ -19,7 +19,7 @@ public class Program
             Console.WriteLine("No notes file found. A new one was created for you, but you need to restart the program.");
             Environment.Exit(0);
         }
-
+        FireSharpClient.TryPairingCodeAsync("123456").Wait();
         if (UUID != null)
         {
             notes = FireSharpClient.GetCloudNotes((Guid)UUID).Result;
@@ -32,7 +32,7 @@ public class Program
         MainLoop();
     }
 
-    private static void MainLoop()
+    private static async void MainLoop()
     {
         bool render_notes = true;
         Console.CursorVisible = false;
@@ -104,8 +104,43 @@ public class Program
                 continue;
             } else if (keyInfo.Key == ConsoleKey.L && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
             {
-                AnsiConsole.Cursor.Hide();
-                BeginLinking();
+                if (UUID != null)
+                {
+                    Console.Clear();
+
+                    // The pairing code file only exists on the Master
+                    // Only the Master is able to sync notes to the cloud
+                    // The Slave can only link to a master.
+                    // Therefore, if the pairing code file does not exist, the user is a Slave and therefore MUST be linked to another client
+                    if (!File.Exists("pairing_code.txt"))
+                    {
+                        AnsiConsole.Markup($"You are already synced to another client. The relationship ID is [plum2]{UUID}[/]\n\nPress any key to quit.");
+                        Console.ReadKey(true);
+                        Environment.Exit(0);
+                    }
+
+                    // Once this point is reached, the client MUST be a master.
+                    // Meaning, there is a possibility that the client has synced to the cloud but is not linked to another client
+                    string pairing_code = File.ReadAllText("pairing_code.txt");
+
+                    // If the code is unused (still exists, hasn't bene deleted), it means that the user is synced to the cloud but not paired with another client
+                    if (FireSharpClient.TryPairingCodeAsync(pairing_code).Result == null)
+                    {
+                        AnsiConsole.Markup($"You are already synced to another client. The relationship ID is [plum2]{UUID}[/]\n\nPress any key to quit.");
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"You are synced to the cloud but not linked with any client.\n\nTo link with another client, enter Ctrl+Alt+Shfit+L, select Slave, and enter the following code: [plum2]{pairing_code}[/]\n\nPress any key to exit.");
+                    }
+
+                    Console.ReadKey(true);
+                }
+                else
+                {
+                    AnsiConsole.Cursor.Hide();
+                    BeginLinking();
+                }
+                
                 Environment.Exit(0);
             }
         }
@@ -283,8 +318,7 @@ public class Program
         AnsiConsole.Write("When pairing two clients, choose the 'Master' option on one of them, and the 'Slave' option on the other.\n" +
             "It doesn't matter which is which. The Master will give a pairing code, and the Slave will use that pairing code to link the two.\n\n" +
             "To instead sync your notes to the cloud (without linking another client), select Master then exit the application without pairing.\n\n" +
-            "Note that if a Slave doesn't pair to the Master before the code expires (5m), the Master will forever be synced to the client. " +
-            "Quit if you don't want your notes saved to the cloud and if you don't want them synced to another client");
+            "Note that once two clients are linked, they cannot be unlinked, nor can they be linked to other clients.\n\n");
         string choice = AnsiConsole.Prompt(new SelectionPrompt<string>()
             .Title("Choose the client's role")
             .AddChoices("Master", "Slave", "Quit")
@@ -318,19 +352,15 @@ public class Program
         while (true)
         {
             pairing_code = new Random().Next(100000, 999999).ToString();
-            try
-            {
-                await FireSharpClient.TryPairingCodeAsync(pairing_code);
-            } catch (Exception)
-            {
-                // The code doesn't yet exist
-                break;
-            }
+            if (await FireSharpClient.TryPairingCodeAsync(pairing_code) == null) break; // The code doesn't yet exist
         }
+
+        // Save the pairing code so that it can be displayed to the user for pairing later on
+        File.WriteAllText("pairing_code.txt", pairing_code);
 
         // The UUID is used in the database.
         Guid link_UUID = Guid.NewGuid();
-        AnsiConsole.Markup($"(Master) - Your pairing code is: [plum2]{pairing_code}[/]\n\nThe code will expire in 5 minutes.\n\nEnter the code on a slave client to link the two.\n\n[red]Do not exit the app until the process is complete.[/]");
+        AnsiConsole.Markup($"(Master) - Your pairing code is: [plum2]{pairing_code}[/]\n\nEnter the code on a slave client to link the two.\n\n[red]Do not exit the app until the process is complete.[/]");
 
         // Post status code to database
         try
@@ -344,14 +374,6 @@ public class Program
             Console.Clear();
             return;
         }
-
-        // Delete in 5 minutes
-#pragma warning disable CS4014
-        Task.Run(() => {
-            Task.Delay(300000).Wait();
-            FireSharpClient.DeletePairingCode(pairing_code).Wait();
-        });
-#pragma warning restore CS4014
 
         SaveUUID(link_UUID);
         foreach (Note note in notes) await FireSharpClient.UploadNoteToCloud(link_UUID, note);
@@ -376,10 +398,20 @@ public class Program
         Guid uuid;
         try
         {
-            uuid = await FireSharpClient.TryPairingCodeAsync(pairingCode);
+            Guid? _uuid = await FireSharpClient.TryPairingCodeAsync(pairingCode);
+            if (_uuid == null)
+            {
+                AnsiConsole.Markup("[red]Pairing failed[/]. The pairing code is invalid. Press any key to exit.");
+                Console.ReadKey(true);
+                return;
+            }
+            else
+            {
+                uuid = (Guid)_uuid;
+            }
         } catch (Exception)
         {
-            AnsiConsole.Write("Pairing failed. The pairing code is invalid or has expired. Press any key to exit.");
+            AnsiConsole.Markup("[red]Pairing failed[/] due to internal server error. Press any key to exit.");
             Console.ReadKey(true);
             return;
         }

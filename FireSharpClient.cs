@@ -1,6 +1,7 @@
 ﻿using FireSharp.Config;
 using FireSharp.Interfaces;
 using FireSharp.Response;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.RegularExpressions;
 
 namespace TerminalTODO;
@@ -35,15 +36,21 @@ internal static class FireSharpClient
     /// <returns>The UUID associated with the pairing code if it exists</returns>
     /// <exception cref="Exception">If the status code is not OK</exception>
     /// <exception cref="Exception">If there was an error parsing the UUID received from the server</exception>
-    public static async Task<Guid> TryPairingCodeAsync(string pairing_code)
+    public static async Task<Guid?> TryPairingCodeAsync(string pairing_code)
     {
         FirebaseResponse response = await client.GetAsync($"pairing-code/{pairing_code}");
+
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
             throw new Exception("Status code not OK");
         }    
 
         string uuid = response.Body;
+        if (uuid == "null")
+        {
+            return null;
+        }
+
         uuid = uuid.Substring(1, uuid.Length - 2);
         try
         {
