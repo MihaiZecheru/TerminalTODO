@@ -23,6 +23,13 @@ public class Program
         if (UUID != null)
         {
             notes = FireSharpClient.GetCloudNotes((Guid)UUID).Result;
+
+            // If the pairing code no longer exists in the database, it means that the user is permanently linked to another client
+            // Therefore, the pairing code is no longer needed
+            if (File.Exists("pairing_code.txt") && FireSharpClient.TryPairingCodeAsync(File.ReadAllText("pairing_code.txt")) == null)
+            {
+                File.Delete("pairing_code.txt");
+            }
         }
         else
         {
