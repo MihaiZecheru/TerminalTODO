@@ -31,3 +31,5 @@ Keys in the multi-line new note entry editor:
 - Ctrl+Backspace to delete a word.
 - Enter to insert a new line.
 - Alt+S to save the note.
+
+Icon file is included in the Release/net8.0 directory so that Visual Studio won't have problems building the Release.
