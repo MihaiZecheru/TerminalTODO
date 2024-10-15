@@ -55,7 +55,7 @@ public class Program
 
             if (!Console.KeyAvailable) continue;
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-            
+
             if (keyInfo.Key == ConsoleKey.N)
             {
                 if (keyInfo.Key == ConsoleKey.N && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
@@ -90,6 +90,22 @@ public class Program
                     render_notes = true;
                 }
             }
+            else if (keyInfo.Key == ConsoleKey.Home)
+            {
+                if (notes_start_index > 0)
+                {
+                    notes_start_index = 0;
+                    render_notes = true;
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.End)
+            {
+                if (notes_start_index < notes.Count - 1)
+                {
+                    notes_start_index = notes.Count - 1;
+                    render_notes = true;
+                }
+            }
             else if (keyInfo.Key == ConsoleKey.D && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
                 // Delete the top note
@@ -109,7 +125,8 @@ public class Program
                 ShowHelpScreen();
                 RenderScreen();
                 continue;
-            } else if (keyInfo.Key == ConsoleKey.L && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
+            }
+            else if (keyInfo.Key == ConsoleKey.L && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt) && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Shift))
             {
                 if (UUID != null)
                 {
@@ -147,7 +164,7 @@ public class Program
                     AnsiConsole.Cursor.Hide();
                     BeginLinking();
                 }
-                
+
                 Environment.Exit(0);
             }
         }
