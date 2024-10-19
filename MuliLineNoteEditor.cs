@@ -135,14 +135,21 @@ internal class MuliLineNoteEditor
             // Enter
             if (keyInfo.Key == ConsoleKey.Enter)
             {
-                lines.Add(new List<char>());
-                Console.WriteLine();
+                if (lines.Count < Console.WindowHeight - 10)
+                {
+                    lines.Add(new List<char>());
+                    Console.WriteLine();
+                }
             }
 
             // Type char
             if (char.IsLetterOrDigit(keyInfo.KeyChar) || "@#$%^&*()-_=+[]{};:'\",.<>/!?~ ".Contains(keyInfo.KeyChar))
             {
-                if (lines[lines.Count - 1].Count >= Console.WindowWidth) continue;
+                if (lines[lines.Count - 1].Count >= Console.WindowWidth - 1)
+                {
+                    continue;
+                }
+
                 lines[lines.Count - 1].Add(keyInfo.KeyChar);
                 Console.Write(keyInfo.KeyChar);
             }
