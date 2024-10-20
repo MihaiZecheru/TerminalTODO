@@ -186,7 +186,7 @@ public class Program
             {
                 if (footer_text.Length == 0) continue;
                 Console.CursorVisible = false;
-                var note = new Note(footer_text);
+                var note = new Note(footer_text.Trim());
                 notes.Add(note);
                 note.Save();
                 footer_text = "";
