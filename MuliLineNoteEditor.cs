@@ -48,9 +48,9 @@ internal class MuliLineNoteEditor
                 continue;
             }
 
-            // Save with Alt+S or Ctrl+Enter
+            // Save with Ctrl+S or Ctrl+Enter
             if (
-                (keyInfo.Key == ConsoleKey.S && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Alt)) ||
+                (keyInfo.Key == ConsoleKey.S && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control)) ||
                 (keyInfo.Key == ConsoleKey.Enter && keyInfo.Modifiers.HasFlag(ConsoleModifiers.Control))
             ) {
                 Console.CursorVisible = false;
