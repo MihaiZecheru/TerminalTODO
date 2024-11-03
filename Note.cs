@@ -39,6 +39,7 @@ internal class Note
 
     public void Delete()
     {
+        Program.noteJustDeleted = true;
         if (Program.UUID == null)
         {
             File.WriteAllText(notes_filename, string.Join('|', Note.GetAllNotes().Where(n => n.ToString() != this.ToString())) + "|");

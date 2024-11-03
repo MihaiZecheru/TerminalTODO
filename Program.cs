@@ -31,10 +31,11 @@ public class Program
             Console.WriteLine("No notes file found. A new one was created for you, but you need to restart the program.");
             Environment.Exit(0);
         }
-        FireSharpClient.TryPairingCodeAsync("123456").Wait();
+
         if (UUID != null)
         {
             notes = FireSharpClient.GetCloudNotes((Guid)UUID).Result;
+            FireSharpClient.StartUpdateEventListener((Guid)UUID, _onNewNoteCreatedInDB, _onNoteDeletedInDB);
 
             // If the pairing code no longer exists in the database, it means that the user is permanently linked to another client
             // Therefore, the pairing code is no longer needed
@@ -497,5 +498,42 @@ public class Program
         {
             return null;
         }
+    }
+
+    public static bool noteJustAdded = false;
+    private static void _onNewNoteCreatedInDB(string databaseID, string data)
+    {
+        // This func is called even if we are the ones posting the note and is called when the app is loaded and the notes are retrieved
+        // Therefore, return early if the note already exists or if we were the one who added the note (noteJustAdded)
+        bool noteExists = notes.Find(note => note.databaseID == databaseID) != null;
+        if (noteExists) return;
+
+        if (noteJustAdded)
+        {
+            noteJustAdded = false;
+            return;
+        }
+
+        notes.Add(new Note(data, databaseID));
+        Console.Clear();
+        RenderScreen();
+    }
+
+    public static bool noteJustDeleted = false;
+    private static void _onNoteDeletedInDB(string databaseID)
+    {
+        // This func is called even if we are the ones deleting the note,
+        // so return early if we are the ones who deleted the note (noteJustDeleted)
+        if (noteJustDeleted)
+        {
+            noteJustDeleted = false;
+            return;
+        }
+
+        int index = notes.FindIndex(note => note.databaseID == databaseID);
+        if (index == -1) return;
+        notes.RemoveAt(index);
+        Console.Clear();
+        RenderScreen();
     }
 }

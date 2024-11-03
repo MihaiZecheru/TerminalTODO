@@ -1,4 +1,5 @@
 ﻿using FireSharp.Config;
+using FireSharp.EventStreaming;
 using FireSharp.Interfaces;
 using FireSharp.Response;
 using System.Reflection.Metadata.Ecma335;
@@ -83,6 +84,7 @@ internal static class FireSharpClient
 
     public static async Task UploadNoteToCloud(Guid uuid, Note note)
     {
+        Program.noteJustAdded = true;
         FirebaseResponse response = await client.PushAsync($"notes/{uuid.ToString()}", note.ToString());
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
@@ -106,5 +108,30 @@ internal static class FireSharpClient
         {
             throw new Exception("Status code not OK");
         }
+    }
+
+    public delegate void OnNewNoteCreatedInDB(string databaseID, string data);
+    public delegate void OnNoteDelectedInDB(string databaseID);
+
+    /// <summary>
+    /// Start the note post/delete event listener
+    /// </summary>
+    /// <param name="uuid">The client UUID. Will only listen to updates/deletes for this client</param>
+    /// <param name="onNewNoteCreatedInDB">Logic to perform when a note is added</param>
+    /// <param name="onNoteDeletedInDB">Logic to perform when a note is deleted</param>
+    public static async void StartUpdateEventListener(Guid uuid, OnNewNoteCreatedInDB onNewNoteCreatedInDB, OnNoteDelectedInDB onNoteDeletedInDB)
+    {
+        EventStreamResponse response = await client.OnAsync(
+            path: $"notes/{uuid.ToString()}",
+            added: (sender, args, context) =>
+            {
+                onNewNoteCreatedInDB(args.Path.Substring(2), args.Data);
+            },
+            changed: null,
+            removed: (sender, args, context) =>
+            {
+                onNoteDeletedInDB(args.Path.Substring(2));
+            }
+        );
     }
 }
