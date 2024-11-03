@@ -315,11 +315,13 @@ public class Program
             note.Render();
             displayed_notes_count++;
         }
+
         // If there are more notes than can be displayed, show a "+x more" line
-        if (lines > Console.WindowHeight - 4 - 1)
+        int remaining_notes_on_bottom = notes.Count - displayed_notes_count - notes_start_index;
+        if (remaining_notes_on_bottom > 0)
         {
             AnsiConsole.Write(
-                new Markup($"[plum2]+{notes.Count - displayed_notes_count - notes_start_index} more[/]")
+                new Markup($"[plum2]+{remaining_notes_on_bottom} more[/]")
             );
         }
 
