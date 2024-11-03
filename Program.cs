@@ -281,7 +281,7 @@ public class Program
             else
             {
                 // If the key is a letter or a digit and there is space, add it to the footer
-                if (char.IsLetterOrDigit(keyInfo.KeyChar) || "@#$%^&*()-_=+[]{};:'\",.<>/!?~ ".Contains(keyInfo.KeyChar))
+                if (char.IsLetterOrDigit(keyInfo.KeyChar) || "@#$%^&*()-_=+{};:'\",.<>/!?~ ".Contains(keyInfo.KeyChar))
                 {
                     if (footer_text.Length == Console.WindowWidth - 9) continue;
                     footer_text += keyInfo.KeyChar;

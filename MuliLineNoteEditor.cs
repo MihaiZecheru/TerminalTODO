@@ -143,7 +143,7 @@ internal class MuliLineNoteEditor
             }
 
             // Type char
-            if (char.IsLetterOrDigit(keyInfo.KeyChar) || "@#$%^&*()-_=+[]{};:'\",.<>/!?~ ".Contains(keyInfo.KeyChar))
+            if (char.IsLetterOrDigit(keyInfo.KeyChar) || "@#$%^&*()-_=+{};:'\",.<>/!?~ ".Contains(keyInfo.KeyChar))
             {
                 if (lines[lines.Count - 1].Count >= Console.WindowWidth - 1)
                 {
