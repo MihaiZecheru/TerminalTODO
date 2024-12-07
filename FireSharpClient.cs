@@ -77,7 +77,8 @@ internal static class FireSharpClient
         var notes = new List<Note>();
         foreach (Match match in Regex.Matches(response.Body, regex))
         {
-            notes.Add(new Note(match.Groups[2].Value.Replace("\\n", "\n"), match.Groups[1].Value));
+            // The pipe (|) is used to represent a quotation mark because the quotation marks were causing errors
+            notes.Add(new Note(match.Groups[2].Value.Replace("\\n", "\n").Replace("|", "\""), match.Groups[1].Value));
         }
         return notes;
     }
@@ -85,7 +86,8 @@ internal static class FireSharpClient
     public static async Task UploadNoteToCloud(Guid uuid, Note note)
     {
         Program.noteJustAdded = true;
-        FirebaseResponse response = await client.PushAsync($"notes/{uuid.ToString()}", note.ToString());
+        // The pipe (|) is used to represent a quotation mark because the quotation marks were causing errors
+        FirebaseResponse response = await client.PushAsync($"notes/{uuid.ToString()}", note.ToString().Replace("\"", "|"));
         if (response.StatusCode != System.Net.HttpStatusCode.OK)
         {
             throw new Exception("Status code not OK");
