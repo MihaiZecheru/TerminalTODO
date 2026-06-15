@@ -1,6 +1,6 @@
 # TerminalTODO
 
-Simple TODO app in the terminal.
+Simple TODO app in the terminal that syncs notes across devices.
 
 Lightweight and easy to use.
 
